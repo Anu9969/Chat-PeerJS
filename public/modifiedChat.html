@@ -43,7 +43,7 @@
         <h3 class=" text-2xl font-semibold text-gray-700 mb-4">Chat</h3>
         <!-- <div id="chat"></div> -->
         
-        <div id="chat" class="h-96 rounded-lg bg-gray-200 overflow-y-auto scrollbar-hide w-full space-y-2 mb-4"></div> 
+        <div id="chat" class="h-96 rounded-lg bg-gray-200 overflow-y-auto scrollbar-hide space-y-2 mb-4"></div> 
         
         <!-- message section -->
         <div class=" flex justify-between max-w-xl w-full gap-4">
@@ -94,6 +94,15 @@
             document.getElementById('chat').innerHTML += `${myPeerId} : ` + msg + '<br>';
             conn.send(msg);
         }
+
+
+        //enter key support
+        document.getElementById('msg').addEventListener('keypress',function(e){
+            if(e.key ==='Enter' ){
+                e.preventDefault();
+                send();
+            }
+        })
 
     </script>
 
