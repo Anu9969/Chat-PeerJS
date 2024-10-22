@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-2xl w-full">
+        <div class="rounded-lg border bg-card text-card-foreground shadow-lg">
+            <!-- Header Section -->
+            <div class="flex flex-col space-y-1.5 p-6 border-b">
+                <h3 class="text-2xl font-semibold leading-none tracking-tight">Chat Application</h3>
+                <p class="text-sm text-muted-foreground">Connect and chat with your peers</p>
+                
+                <div class="space-y-4 mt-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600">Your peer ID:</span>
+                        <span id="pid" class="font-semibold text-blue-600"></span>
+                    </div>
+                    <div class="flex space-x-2">
+                        <input 
+                            type="text" 
+                            id="fid" 
+                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            placeholder="Enter friend's peer ID..."
+                        >
+                        <button 
+                            onclick="connect()" 
+                            class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 bg-blue-600 text-white"
+                        >
+                            Connect
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="p-6">
+                <div id="chat" class="h-[400px] overflow-y-auto scrollbar-hide space-y-4 mb-4"></div>
+                
+                <!-- Message Input -->
+                <div class="flex space-x-2">
+                    <input 
+                        type="text" 
+                        id="msg" 
+                        class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        placeholder="Type your message..."
+                    >
+                    <button 
+                        onclick="send()" 
+                        class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 bg-blue-600 text-white"
+                    >
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                        </svg>
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var myPeerId = window.prompt("Enter your peer ID");
+        var peer = new Peer(myPeerId);
+        document.getElementById('pid').innerText = myPeerId;
+        var conn;
+
+        function connect() {
+            var fid = document.getElementById('fid').value;
+            conn = peer.connect(fid);
+            conn.on('open', function(){
+                conn.send('Connected!!!');
+                addMessage('System', 'Connected successfully!', 'system');
+            });
+        }
+
+        function addMessage(sender, message, type = 'normal') {
+            const chat = document.getElementById('chat');
+            const messageDiv = document.createElement('div');
+            
+            if (type === 'system') {
+                messageDiv.className = 'flex items-center justify-center';
+                messageDiv.innerHTML = `
+                    <div class="bg-gray-100 text-gray-600 text-sm px-4 py-2 rounded-full">
+                        ${message}
+                    </div>
+                `;
+            } else {
+                const isMe = sender === myPeerId;
+                messageDiv.className = `flex ${isMe ? 'justify-end' : 'justify-start'}`;
+                messageDiv.innerHTML = `
+                    <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'} 
+                                px-4 py-3 rounded-lg max-w-[80%] shadow-sm">
+                        <div class="text-xs ${isMe ? 'text-blue-100' : 'text-gray-500'} mb-1">${sender}</div>
+                        <div class="text-sm">${message}</div>
+                    </div>
+                `;
+            }
+            
+            chat.appendChild(messageDiv);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        peer.on('connection', function(connection) {
+            conn = connection;
+            conn.on('data', function(data){
+                if(document.getElementById('fid').value === ""){
+                    document.getElementById('fid').value = conn.peer;
+                    connect();
+                }
+                addMessage(conn.peer, data);
+            });
+        });
+
+        function send() {
+            var msg = document.getElementById('msg').value;
+            if (msg.trim()) {
+                addMessage(myPeerId, msg);
+                conn.send(msg);
+                document.getElementById('msg').value = '';
+            }
+        }
+
+        document.getElementById('msg').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                send();
+            }
+        });
+    </script>
+</body>
+</html>
