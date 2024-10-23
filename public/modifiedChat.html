@@ -76,7 +76,32 @@
             conn = peer.connect(fid);
             conn.on('open', function(){
                 conn.send('Connected!!!');
+                addMessage('System' ,"Connected successfully!", 'system');
             });
+        }
+
+        function addMessage(sender,message,type = 'normal'){
+            const chat = document.getElementById('chat');
+            const messageDiv = document.createElement('div');
+
+            if(type === "system"){
+                messageDiv.className ='text-center text-sm text-gray-500';
+                messageDiv.textContentn= message;
+            }
+            else{
+               const isMe = sender === myPeerId;
+               messageDiv.className =`flex ${isMe ? 'justify-end':'justify-start'}`;
+               messageDiv.innerHTML = `
+                <div class="${isMe ? 'bg-blue-500 text-white': 'bg-gray-300 text-gray-800'}
+                px-4 py-2 m-4 rounded-lg max-w-[80%]">
+                <div class="text-sm ${isMe ? "text-blue-100" : "text-gray-500"} mb-1">${sender}</div>
+                <div>${message}</div></div>
+                
+               `;
+            }
+
+            chat.appendChild(messageDiv);
+            // chat.scrollTop = chat.scrollHeight;
         }
 
         peer.on('connection', function(conn) {
@@ -85,14 +110,18 @@
                     document.getElementById('fid').value = conn.peer;
                     connect();
                 }
-                document.getElementById('chat').innerHTML += `${document.getElementById('fid').value} : ` + data + '<br>';
+                // document.getElementById('chat').innerHTML += `${document.getElementById('fid').value} : ` + data + '<br>';
+
+                addMessage(conn.peer, data);
             });
         });
 
         function send() {
             var msg = document.getElementById('msg').value;
-            document.getElementById('chat').innerHTML += `${myPeerId} : ` + msg + '<br>';
+            // document.getElementById('chat').innerHTML += `${myPeerId} : ` + msg + '<br>';
+            addMessage(myPeerId, msg);
             conn.send(msg);
+            document.getElementById('msg').value = '';
         }
 
 
